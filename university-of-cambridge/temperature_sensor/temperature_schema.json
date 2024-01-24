@@ -1,0 +1,18 @@
+{
+    "title": "temperature sensor",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "A representation of temperature sensor data",
+    "type": "object",
+    "properties": {
+      "machine": { "type": "string" },
+      "temp": { "type": "string" },
+      "AlertVal": { "type": "string" },
+      "Threshold": { "type": "string" },
+      "sensor": { "type": "string" },
+      "time": { "type": "string",
+                "format": "date-time" 
+       },
+      "topic": { "type": "string" }
+    },
+    "required": ["machine", "temp", "AlertVal", "Threshold", "sensor", "time","topic"]
+} 
