@@ -4,16 +4,30 @@
     "description": "A representation of multi-sensor data",
     "type": "object",
     "properties": {
-      "ID": { "type": "string" },
-      "msg_type": { "type": "string" },
-      "fw_date": { "type": "string" },
-      "online_TS": { "type": "string" },
-      "time": { "type": "string" },
-      "rssi": { "type": "string" },
-      "temp": { "type": "string" },
-      "humidity": { "type": "string" },
-      "Irms": { "type": "string" },
-      "topic": { "type": "string" }
+        "ID": { "type": "string" },
+        "msg_type": { 
+            "type": "string",
+            "enum": ["data","status"]
+        },
+        "fw_date": { "type": "string" },
+        "online_TS": { 
+            "type": "string",
+            "pattern": "^[0-9]+$"
+        },
+        "time": { 
+            "type": "string",
+            "pattern": "^[0-9]+$"
+        },
+        "rssi": { "type": "string" },
+        "temp": { "type": "string" },
+        "humidity": { 
+            "type": "string",
+            "pattern": "^\\d+(\\.\\d+)?$",
+            "minimum": "0",
+            "maximum": "100"
+         },
+        "Irms": { "type": "string" },
+        "topic": { "type": "string" }
     },
     "required": ["ID", "msg_type", "fw_date", "online_TS", "time", "rssi", "temp", "humidity", "Irms", "topic"]
 } 
