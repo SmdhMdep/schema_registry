@@ -4,7 +4,10 @@
     "description": "A representation of multi-sensor data",
     "type": "object",
     "properties": {
-        "ID": { "type": "string" },
+        "ID": { 
+            "type": "string",
+            "const": "TempHumidityCurrentTest"
+        },
         "msg_type": { 
             "type": "string",
             "enum": ["data","status"]
@@ -12,21 +15,32 @@
         "fw_date": { "type": "string" },
         "online_TS": { 
             "type": "string",
-            "pattern": "^[0-9]+$"
+            "pattern": "^-?\\d+$",
+            "minLength": 1, 
+            "maxLength": 10   
         },
         "time": { 
             "type": "string",
-            "pattern": "^[0-9]+$"
+            "pattern": "^-?\\d+$",
+            "minLength": 1, 
+            "maxLength": 10  
         },
-        "rssi": { "type": "string" },
-        "temp": { "type": "string" },
+        "rssi": {
+            "type": "string",
+            "pattern": "-([3-8][0-9]|90)$" 
+        },
+        "temp": { 
+            "type": "string",
+            "pattern": "^-?\\d{1,3}(\\.\\d{0,2})?$"
+        },
         "humidity": { 
             "type": "string",
-            "pattern": "^\\d+(\\.\\d+)?$",
-            "minimum": "0",
-            "maximum": "100"
-         },
-        "Irms": { "type": "string" },
+            "pattern": "^(100(\\.00?)?|\\d{1,2}(\\.\\d{0,2})?)$"
+        },
+        "Irms": { 
+            "type": "string",
+            "pattern": "^\\d{1,3}(\\.\\d{0,2})?$"
+        },
         "topic": { "type": "string" }
     },
     "required": ["ID", "msg_type", "fw_date", "online_TS", "time", "rssi", "temp", "humidity", "Irms", "topic"]

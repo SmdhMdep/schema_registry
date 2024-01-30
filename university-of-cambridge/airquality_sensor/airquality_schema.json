@@ -4,14 +4,24 @@
     "description": "A representation of airquality sensor data",
     "type": "object",
     "properties": {
-      "TVOC": { "type": "string" },
-      "CO2": { "type": "string" },
-      "AQI": { "type": "string" },
-      "machine": { "type": "string" },
-      "time": { "type": "string",
-                "format": "date-time" 
-       },
-      "topic": { "type": "string" }
+        "TVOC": { 
+            "type": "string",
+            "pattern": "^\\d+$" 
+        },
+        "CO2": { 
+            "type": "string",
+            "pattern": "^\\d+$"
+        },
+        "AQI": { 
+            "type": "string",
+            "pattern": "^\\d+$" 
+        },
+        "machine": { "type": "string" },
+        "time": { 
+            "type": "string",
+            "format": "date-time" 
+        },
+        "topic": { "type": "string" }
     },
     "required": ["TVOC", "CO2", "AQI", "machine", "time","topic"]
 } 
