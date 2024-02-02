@@ -27,7 +27,7 @@
         },
         "rssi": {
             "type": "string",
-            "pattern": "-([3-8][0-9]|90)$" 
+            "pattern": "^-([3-8][0-9]|90)$" 
         },
         "temp": { 
             "type": "string",
