@@ -1,4 +1,4 @@
-### Airparticle sensor 
+### Airparticle monitoring 
 
 <br/>
 The below table describes the schema for the airparticle sensor data.

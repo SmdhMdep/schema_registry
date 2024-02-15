@@ -1,4 +1,4 @@
-### Airquality sensor 
+### Airquality monitoring 
 
 <br/>
 The below table describes the schema for the airquality sensor data.

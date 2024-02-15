@@ -1,0 +1,51 @@
+{
+    "title": "Scrap and rework monitoring",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "A representation of scrap and rework monitoring data",
+    "type": "object",
+    "properties": {
+        "operation": {
+            "type": "string"
+          },
+          "part": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "outcome": {
+                  "type": "string",
+                  "enum": ["pass", "scrap", "rework"]
+                },
+                "detail": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "reason": {
+                        "type": "string"
+                      },
+                      "count": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    },
+                    "required": ["reason", "count"],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": ["outcome", "detail"],
+              "additionalProperties": false
+            }
+          }
+    },
+    "required": ["operation", "part", "timestamp", "results"],
+    "additionalProperties": false
+} 

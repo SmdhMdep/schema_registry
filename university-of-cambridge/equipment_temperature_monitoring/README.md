@@ -1,7 +1,9 @@
-### Temperature sensor 
+### Equipment temperature monitoring 
 
 <br/>
-The below table describes the schema for the temperature sensor data.
+Equiment temperature monitoring measures, records and displays temperature of equipment and shows an alert when temperature goes over a (end- user configured) limit.
+
+The below table describes the schema for the equipment temperature sensor data.
 
 <br/>
 
