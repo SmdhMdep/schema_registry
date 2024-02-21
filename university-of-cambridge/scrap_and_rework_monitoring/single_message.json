@@ -6,8 +6,19 @@
     "properties": {
         "operation": { "type": "string" },
         "part": { "type": "string" },
-        "outcome": { "type": "string" },
-        "count": { "type": "number"},
-        "timestamp": { "type": "string", "format": "date-time" }
-    }
+        "outcome": { 
+            "type": "string",
+            "enum": ["pass","rework","scrap"]
+        },
+        "count": { 
+            "type": "number", 
+            "minimum": 1
+        },
+        "timestamp": { 
+            "type": "string", 
+            "format": "date-time" 
+        },
+        "topic": { "type": "string" }
+    },
+    "required": ["operation", "part", "outcome", "count", "timestamp", "topic"]
 } 

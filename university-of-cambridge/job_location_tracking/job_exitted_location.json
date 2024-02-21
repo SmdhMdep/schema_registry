@@ -5,12 +5,12 @@
     "type": "object",
     "properties": {
         "id": { "type": "string" },
-        "state": { "type": "string" },
+        "state": { 
+            "type": "string",
+            "const": "exited" 
+        },
         "location": { "type": "string" },
-        "timestamp": { "type": "string" },
-        "user1": { "type": "string" },
-        "user2": { "type": "string" },
-        "user3": { "type": "string" },
-        "topic": { "type": "string" }
-    }
+        "topic": {"type": "string"}
+    },
+    "required": ["id", "state", "location", "topic"]
 } 

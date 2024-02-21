@@ -33,19 +33,18 @@
                       },
                       "count": {
                         "type": "integer",
-                        "minimum": 0
+                        "minimum": 1
                       }
                     },
-                    "required": ["reason", "count"],
-                    "additionalProperties": false
+                    "required": ["reason", "count"]
                   }
                 }
               },
               "required": ["outcome", "detail"],
               "additionalProperties": false
             }
-          }
+          },
+          "topic": { "type": "string" }
     },
-    "required": ["operation", "part", "timestamp", "results"],
-    "additionalProperties": false
+    "required": ["operation", "part", "timestamp", "results","topic"]
 } 

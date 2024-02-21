@@ -8,6 +8,14 @@ Messages about job state updates indicating arrival at a new location are produc
 Messages are sent to this topic by the data storage module to indicate a change in state.
 Messages on these topics are received and processed by the user interface to provide live updates
 
+| Field      | Type           | Description                            |
+|------------|----------------|----------------------------------------|
+| id         | String         | Identifier of tracked item (Job Number)|
+| state      | String         | Const: "entered"                       |
+| location   | String         | Location identifier                    |
+| timestamp  | String (date-time)| ISO8601 timestamp                     |
+
+
 Example payload: 
 ```json
 {
@@ -26,6 +34,13 @@ Messages about job state updates indicating departure from a location are produc
 Messages are sent to this topic by the data storage module to indicate a change in state.
 Messages on these topics are received and processed by the user interface to provide live updates
 
+| Field      | Type   | Description                                 |
+|------------|--------|---------------------------------------------|
+| id         | String | Identifier of tracked item (Job Number)     |
+| state      | String | Const: "exited"                             |
+| location   | String | Location identifier                        |
+
+
 Example payload:
 ```json
 {
@@ -40,6 +55,17 @@ Example payload:
 Messages about job state updates indicating that a user field has been updated are produced and consumed on this topic.
 Messages are sent to this topic by the data storage module to indicate a change in state.
 Messages on these topics are received and processed by the user interface to provide live updates
+
+| Field      | Type           | Description                            |
+|------------|----------------|----------------------------------------|
+| id         | String         | Identifier of tracked item (Job Number)|
+| state      | String         | Const: "changed"                       |
+| location   | String         | Location identifier                    |
+| timestamp  | String (date-time)| ISO8601 timestamp                     |
+| user1      | String         | Free form user input (user1)           |
+| user2      | String         | Free form user input (user2)           |
+| user3      | String         | Free form user input (user3)           |
+
 
 Example payload:
 ```json

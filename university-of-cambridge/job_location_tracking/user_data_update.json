@@ -1,0 +1,23 @@
+{
+    "title": "Job location tracking",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "A representation of job location tracking data",
+    "type": "object",
+    "properties": {
+        "id": { "type": "string" },
+        "state": { 
+            "type": "string",
+            "const": "changed" 
+        },
+        "location": { "type": "string" },
+        "timestamp": { 
+            "type": "string",
+            "format": "date-time" 
+        },
+        "user1": {"type": "string"},
+        "user2": {"type": "string"},
+        "user3": {"type": "string"},
+        "topic": {"type": "string"}
+    },
+    "required": ["id", "state", "location", "timestamp", "user1", "user2","user3", "topic"]
+} 
