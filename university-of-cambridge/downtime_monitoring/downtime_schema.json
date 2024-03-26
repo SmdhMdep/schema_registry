@@ -1,0 +1,24 @@
+{
+    "title": "downtime monitoring",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "A representation of downtime monitoring data",
+    "type": "object",
+    "properties": {
+        "machine_id": { "type": "number" },
+        "machine_name": { 
+            "type": "string"
+        },
+        "running": { 
+            "type": "boolean"
+        },
+        "status": {            
+            "type": "string"
+        },
+        "time": { 
+            "type": "string",
+            "format": "date-time" 
+        },
+        "topic": { "type": "string" }
+    },
+    "required": ["machine_id", "machine_name", "running", "status", "time","topic"]
+} 
