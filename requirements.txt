@@ -1,0 +1,3 @@
+jsonschema==4.21.1
+types-jsonschema
+hypothesis==6.99.13
