@@ -2,11 +2,35 @@
     "$schema": "http://json-schema.org/draft-07/schema#",
     "$id": "https://iot.smdh.uk/meta-schema#",
     "title": "SMDH IoT Meta-schema",
-    "$comment": "constraints that only apply to the root schema object",
     "allOf": [
         {
             "$ref": "#/definitions/schema"
         }
+    ],
+    "$comment": "constraints that only apply to the root schema object",
+    "type": "object",
+    "properties": {
+        "title": {
+            "minLength": 5,
+            "maxLength": 60
+        },
+        "type": {
+            "const": "object"
+        },
+        "$schema": {
+            "$comment": "Allow specifying the JSON schema draft 7 for backwards compatibility",
+            "enum": [
+                "http://json-schema.org/draft-07/schema#",
+                "https://iot.smdh.uk/meta-schema#"
+            ]
+        }
+    },
+    "required": [
+        "title",
+        "description",
+        "$schema",
+        "type",
+        "properties"
     ],
     "definitions": {
         "schemaArray": {
@@ -244,10 +268,36 @@
             },
             "default": true
         },
+        "customSchema": {
+            "$comment": "constraints that apply to any schema including sub-schemas",
+            "properties": {
+                "properties": {
+                    "$comment": "constraints that apply to the sub-schemas of properties only",
+                    "additionalProperties": {
+                        "properties": {
+                            "mvDType": {
+                                "enum": [
+                                    "int",
+                                    "long",
+                                    "float",
+                                    "double"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "type"
+                        ]
+                    }
+                }
+            }
+        },
         "schema": {
             "allOf": [
                 {
                     "$ref": "#/definitions/coreSchema"
+                },
+                {
+                    "$ref": "#/definitions/customSchema"
                 }
             ]
         }
