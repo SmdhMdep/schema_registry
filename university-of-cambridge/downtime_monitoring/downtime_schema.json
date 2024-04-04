@@ -4,15 +4,22 @@
     "description": "A representation of downtime monitoring data",
     "type": "object",
     "properties": {
-        "machine_id": { "type": "number" },
+        "machine_id": { "type": "number",
+           "minLength": 1, 
+           "maxLength": 60  
+        },
         "machine_name": { 
-            "type": "string"
+            "type": "string",
+            "minLength": 1, 
+            "maxLength": 60  
         },
         "running": { 
             "type": "boolean"
         },
         "status": {            
-            "type": "string"
+            "type": "string",
+            "minLength": 1, 
+            "maxLength": 60 
         },
         "time": { 
             "type": "string",
