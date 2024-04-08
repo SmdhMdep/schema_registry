@@ -29,5 +29,10 @@ To run the tests initialize your python environment by installing the dependenci
 from `requirements.txt`, then run:
 
 ```shell
-python test.py
+python -m tests
 ```
+
+#### Running tests on the remote schemas
+
+Tests can run against a remote dynamodb schema registry but by default this is
+disabled. See `python -m tests --help` to enable them.

@@ -1,12 +1,19 @@
 import unittest
 import pathlib
+import datetime
+import sys
 import json
 import string
 import contextlib
+from typing import Iterable
 
+import boto3
 from jsonschema import validators, SchemaError
 from hypothesis import given
 from hypothesis import strategies as st
+
+
+CACHE_DIR_PATH = pathlib.Path('.registry_cache')
 
 
 def dict_without(value, key):
@@ -38,13 +45,20 @@ VALID_TYPES = ("array", "boolean", "integer", "null", "number", "object", "strin
 VALID_MVDTYPES = ("int", "long", "float", "double")
 
 
-class MetaSchemaTestCase(unittest.TestCase):
+def create_meta_schema_validator():
+    with open('meta-schema') as f:
+        meta_schema = json.load(f)
+    return validators.create(meta_schema)
+
+
+class BaseTestCase(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        with open('meta-schema') as f:
-            self.meta_schema = json.load(f)
-        self.validator = validators.create(self.meta_schema)
+        self.validator = create_meta_schema_validator()
+        self.meta_schema = self.validator.META_SCHEMA
 
+
+class MetaSchemaTestCase(BaseTestCase):
     def test_meta_schema_is_valid(self):
         meta_schema_validator = validators.validator_for(self.meta_schema)
         meta_schema_validator.check_schema(self.meta_schema)
@@ -158,5 +172,144 @@ class MetaSchemaTestCase(unittest.TestCase):
                 self.validator.check_schema(schema)
 
 
+class RemoteSchemasTestCase(BaseTestCase):
+    schemas: Iterable[dict]
+    region: str
+    table: str
+
+    id_field = "id"
+    schema_field = "jsonSchema"
+
+    @classmethod
+    def init(cls, *args):
+        cls.region, cls.table = args
+        cls.schemas = cls.load_schemas()
+
+    @classmethod
+    def load_schemas(cls) -> Iterable[dict]:
+        session = boto3.Session()
+
+        cache_content = cls._read_cache_content(session)
+        if cache_content is not None:
+            yield from json.loads(cache_content)
+
+        schemas = cls._read_remote_schemas(session)
+        cls._write_cache_content(json.dumps(schemas), session)
+        yield from schemas
+
+    def test_remote_devices_schemas_against_meta_schema(self):
+        for obj in self.schemas:
+            path, schema = obj["path"], obj["schema"]
+            with self.subTest(path=path):
+                if isinstance(schema, str):
+                    self.fail("invalid JSON document: %s" % schema)
+                else:
+                    self.validator.check_schema(schema)
+
+    @classmethod
+    def _cache_file_path(cls, session: boto3.Session):
+        credentials = session.get_credentials()
+        assert credentials is not None
+        access_key = credentials.access_key
+        return (
+            CACHE_DIR_PATH / f'remote_schemas_{access_key}_{cls.region}_{cls.table}.json'
+        )
+
+    @classmethod
+    def _read_cache_content(cls, session: boto3.Session):
+        cache_file_path = cls._cache_file_path(session)
+        if cache_file_path.exists():
+            day_ago = datetime.datetime.now() - datetime.timedelta(days=1)
+            if cache_file_path.stat().st_mtime >= day_ago.timestamp():
+                return cache_file_path.read_text()
+        return None
+    
+    @classmethod
+    def _write_cache_content(cls, content: str, session: boto3.Session):
+        cache_file_path = cls._cache_file_path(session)
+        cache_file_path.parent.mkdir(parents=True, exist_ok=True)
+        cache_file_path.write_text(content)
+
+    @staticmethod
+    def _try_load_json(s: str):
+        try:
+            return json.loads(s), None
+        except json.decoder.JSONDecodeError as e:
+            return None, e.args[0]
+
+    @classmethod
+    def _read_remote_schemas(cls, session: boto3.Session):
+        schemas_table = session.resource("dynamodb", region_name=cls.region).Table(cls.table)
+     
+        schemas: list[dict] = []
+        next_page = None
+        while True:
+            params: dict = {"ExclusiveStartKey": next_page} if next_page is not None else {}
+            result = schemas_table.scan(AttributesToGet=[cls.id_field, cls.schema_field], **params)
+            next_page = result.get("LastEvaluatedKey")
+
+            items: list[dict] = result["Items"]
+            for it in items:
+                schema, error = cls._try_load_json(it[cls.schema_field])
+                schemas.append({
+                    "path": rf"remote://{it[cls.id_field]}",
+                    "schema": schema or error,
+                })
+
+            if next_page is None:
+                break
+
+        return schemas
+
+
+def remote_arg_type(option):
+    try:
+        region, table = option.split(":")
+        # check that the region resembles an aws region name, e.g. eu-west-1
+        part1, part2, part3 = region.split("-")
+        if (
+            len(part1) != 2
+            or part2 not in [
+                "north", "east", "south", "west", "central",
+                "northeast", "northwest", "southeast", "southwest",
+            ] or not part3.isdigit()
+        ):
+            raise ValueError()
+    except:
+        raise ValueError('expected remote argument to have a valid format')
+    else:
+        return region, table
+
+
 if __name__ == '__main__':
-    unittest.main()
+    import argparse
+
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument(
+        '-h',
+        '--help',
+        action='store_true',
+        help='show this help message and exit',
+    )
+    parser.add_argument(
+        '--remote',
+        default=None,
+        type=remote_arg_type,
+        metavar='REGIONNAME:TABLENAME',
+        help="""
+            run tests against a remote dynamodb schema registry.
+            WARNING: these tests will scan the complete table
+        """,
+    )
+
+    options, unknown_args = parser.parse_known_args()
+    if options.help:
+        parser.print_help()
+        print('\nIn addition to the previous options, the following unittest options can be passed:')
+        unknown_args.append('-h') # show unittest help
+    elif options.remote is None:
+        unittest.skip("see --help to run tests on remote schemas")(RemoteSchemasTestCase)
+    else:
+        RemoteSchemasTestCase.init(*options.remote)
+
+    unittest.main(argv=sys.argv[:1] + unknown_args)
