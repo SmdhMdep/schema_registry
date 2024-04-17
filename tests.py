@@ -41,8 +41,9 @@ def root_schema(property_schema_st = st.just({})):
     })
 
 
-VALID_TYPES = ("array", "boolean", "integer", "null", "number", "object", "string")
-VALID_MVDTYPES = ("int", "long", "float", "double")
+INVALID_TYPES = ("object", "boolean", "array", "null")
+VALID_TYPES = ("string", "integer", "number")
+VALID_MVDTYPES = ("int", "long", "float", "decimal", "bool")
 
 
 def create_meta_schema_validator():
@@ -118,12 +119,28 @@ class MetaSchemaTestCase(BaseTestCase):
                 "value": { "mvDType": "int" }
             }
         } ],
-        [ "'mvDType' field accepts int, long, double, and float", True, { **BASE_SCHEMA,
+        [ "'mvDType' field accepts int, long, decimal, float, and bool", True, { **BASE_SCHEMA,
             "properties": {
                 "value1": { "type": "string", "mvDType": "int" },
-                "value1": { "type": "string", "mvDType": "long" },
-                "value1": { "type": "string", "mvDType": "float" },
-                "value1": { "type": "string", "mvDType": "double" },
+                "value2": { "type": "string", "mvDType": "long" },
+                "value3": { "type": "string", "mvDType": "float" },
+                "value4": { "type": "string", "mvDType": "decimal" },
+                "value5": { "type": "string", "mvDType": "bool", "enum": ["0", "1"] },
+                "value6": { "type": "string", "mvDType": "bool", "enum": ["1", "0"] },
+            }
+        } ],
+        [ "a bool 'mvDType' field without enum with 0 and 1 strings is invalid", False, { **BASE_SCHEMA,
+            "properties": {
+                "value": { "type": "string", "mvDType": "bool" },
+            }
+        } ],
+        [ "'mvDType' field requires 'type' to be a string", False, { **BASE_SCHEMA,
+            "properties": {
+                "value1": { "type": "integer", "mvDType": "int" },
+                "value2": { "type": "number", "mvDType": "long" },
+                "value3": { "type": "boolean", "mvDType": "float" },
+                "value4": { "type": "null", "mvDType": "decimal" },
+                "value5": { "type": "object", "mvDType": "bool", "enum": ["0", "1"] },
             }
         } ],
     ]
@@ -143,7 +160,6 @@ class MetaSchemaTestCase(BaseTestCase):
     @given(properties_schema=schema(
         value=schema(
             type=st.sampled_from(VALID_TYPES),
-            mvDType=st.sampled_from(VALID_MVDTYPES),
     )))
     def test_validates_proper_types(self, properties_schema):
         schema = {**self.BASE_SCHEMA, "properties":properties_schema}
@@ -157,6 +173,11 @@ class MetaSchemaTestCase(BaseTestCase):
             schema(type=invalid_type_st),
             schema(type=st.just("string"), mvDType=invalid_mvdtype_st),
             schema(type=invalid_type_st, mvDType=invalid_mvdtype_st),
+            schema(type=st.sampled_from(INVALID_TYPES)),
+            schema(
+                type=st.sampled_from(VALID_TYPES).filter(lambda s: s != "string"),
+                mvDType=st.sampled_from(VALID_MVDTYPES),
+            ),
         ])
     ))
     def test_invalidates_improper_types(self, properties_schema):
