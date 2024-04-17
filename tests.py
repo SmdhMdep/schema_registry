@@ -13,6 +13,12 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 
+KNOWN_INVALID_SCHEMAS = [
+    'university-of-cambridge/downtime_monitoring/downtime_schema.json',
+    'university-of-cambridge/scrap_and_rework_monitoring/block_message.json',
+]
+"""Schemas that are known to not adhere to the meta schema. These are expected to fail."""
+
 CACHE_DIR_PATH = pathlib.Path('.registry_cache')
 
 
@@ -60,6 +66,9 @@ class BaseTestCase(unittest.TestCase):
 
 
 class MetaSchemaTestCase(BaseTestCase):
+    no_invalid_schemas: bool = False
+    """If True, the known invalid schemas will be expected to pass validation instead of failing."""
+
     def test_meta_schema_is_valid(self):
         meta_schema_validator = validators.validator_for(self.meta_schema)
         meta_schema_validator.check_schema(self.meta_schema)
@@ -186,10 +195,14 @@ class MetaSchemaTestCase(BaseTestCase):
             self.validator.check_schema(schema)
 
     def test_devices_schemas_against_meta_schema(self):
+        stack = contextlib.ExitStack()
         for schema_path in pathlib.Path().glob('[!.]*/**/*.json'):
-            with self.subTest(path=str(schema_path)):
-                with open(schema_path) as f:
+            path = str(schema_path)
+            with self.subTest(path=path), stack:
+                with open(path) as f:
                     schema = json.load(f)
+                if path in KNOWN_INVALID_SCHEMAS and not self.no_invalid_schemas:
+                    stack.enter_context(self.assertRaises(SchemaError))
                 self.validator.check_schema(schema)
 
 
@@ -313,6 +326,11 @@ if __name__ == '__main__':
         help='show this help message and exit',
     )
     parser.add_argument(
+        '--no-invalid-schemas',
+        action='store_true',
+        help='run tests on invalid schemas and expect them to pass validation'
+    )
+    parser.add_argument(
         '--remote',
         default=None,
         type=remote_arg_type,
@@ -328,9 +346,12 @@ if __name__ == '__main__':
         parser.print_help()
         print('\nIn addition to the previous options, the following unittest options can be passed:')
         unknown_args.append('-h') # show unittest help
-    elif options.remote is None:
-        unittest.skip("see --help to run tests on remote schemas")(RemoteSchemasTestCase)
     else:
-        RemoteSchemasTestCase.init(*options.remote)
+        if options.remote is None:
+            unittest.skip("see --help to run tests on remote schemas")(RemoteSchemasTestCase)
+        else:
+            RemoteSchemasTestCase.init(*options.remote)
+
+        MetaSchemaTestCase.no_invalid_schemas = options.no_invalid_schemas
 
     unittest.main(argv=sys.argv[:1] + unknown_args)
