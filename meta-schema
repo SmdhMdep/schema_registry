@@ -280,16 +280,84 @@
                                     "int",
                                     "long",
                                     "float",
-                                    "double"
+                                    "decimal",
+                                    "bool"
                                 ]
+                            },
+                            "type": {
+                                "if": {
+                                    "enum": [
+                                        "array",
+                                        "boolean",
+                                        "null",
+                                        "object"
+                                    ]
+                                },
+                                "then": false,
+                                "else": true
                             }
                         },
                         "required": [
                             "type"
-                        ]
+                        ],
+                        "dependencies": {
+                            "mvDType": {
+                                "$ref": "#/definitions/typeCombinations"
+                            }
+                        }
                     }
                 }
             }
+        },
+        "typeCombinations": {
+            "oneOf": [
+                {
+                    "properties": {
+                        "mvDType": {
+                            "enum": [
+                                "int",
+                                "long",
+                                "float",
+                                "decimal"
+                            ]
+                        },
+                        "type": {
+                            "const": "string"
+                        }
+                    },
+                    "required": [
+                        "mvDType",
+                        "type"
+                    ]
+                },
+                {
+                    "properties": {
+                        "mvDType": {
+                            "const": "bool"
+                        },
+                        "type": {
+                            "const": "string"
+                        },
+                        "enum": {
+                            "enum": [
+                                [
+                                    "0",
+                                    "1"
+                                ],
+                                [
+                                    "1",
+                                    "0"
+                                ]
+                            ]
+                        }
+                    },
+                    "required": [
+                        "mvDType",
+                        "type",
+                        "enum"
+                    ]
+                }
+            ]
         },
         "schema": {
             "allOf": [

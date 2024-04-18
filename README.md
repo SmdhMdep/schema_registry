@@ -32,7 +32,7 @@ from `requirements.txt`, then run:
 python -m tests
 ```
 
-#### Running tests on the remote schemas
+Tests can also run against a remote dynamodb schema registry but by default this is
+disabled.
 
-Tests can run against a remote dynamodb schema registry but by default this is
-disabled. See `python -m tests --help` to enable them.
+See `python -m tests --help` to enable remote schema registry tests and for all other options.
