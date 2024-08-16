@@ -13,6 +13,12 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 
+KNOWN_INVALID_SCHEMAS = [
+    'university-of-cambridge/downtime_monitoring/downtime_schema.json',
+    'university-of-cambridge/scrap_and_rework_monitoring/block_message.json',
+]
+"""Schemas that are known to not adhere to the meta schema. These are expected to fail."""
+
 CACHE_DIR_PATH = pathlib.Path('.registry_cache')
 
 
@@ -41,8 +47,9 @@ def root_schema(property_schema_st = st.just({})):
     })
 
 
-VALID_TYPES = ("array", "boolean", "integer", "null", "number", "object", "string")
-VALID_MVDTYPES = ("int", "long", "float", "double")
+INVALID_TYPES = ("object", "boolean", "array", "null")
+VALID_TYPES = ("string", "integer", "number")
+VALID_MVDTYPES = ("int", "long", "float", "decimal", "bool")
 
 
 def create_meta_schema_validator():
@@ -59,6 +66,9 @@ class BaseTestCase(unittest.TestCase):
 
 
 class MetaSchemaTestCase(BaseTestCase):
+    no_invalid_schemas: bool = False
+    """If True, the known invalid schemas will be expected to pass validation instead of failing."""
+
     def test_meta_schema_is_valid(self):
         meta_schema_validator = validators.validator_for(self.meta_schema)
         meta_schema_validator.check_schema(self.meta_schema)
@@ -118,12 +128,28 @@ class MetaSchemaTestCase(BaseTestCase):
                 "value": { "mvDType": "int" }
             }
         } ],
-        [ "'mvDType' field accepts int, long, double, and float", True, { **BASE_SCHEMA,
+        [ "'mvDType' field accepts int, long, decimal, float, and bool", True, { **BASE_SCHEMA,
             "properties": {
                 "value1": { "type": "string", "mvDType": "int" },
-                "value1": { "type": "string", "mvDType": "long" },
-                "value1": { "type": "string", "mvDType": "float" },
-                "value1": { "type": "string", "mvDType": "double" },
+                "value2": { "type": "string", "mvDType": "long" },
+                "value3": { "type": "string", "mvDType": "float" },
+                "value4": { "type": "string", "mvDType": "decimal" },
+                "value5": { "type": "string", "mvDType": "bool", "enum": ["0", "1"] },
+                "value6": { "type": "string", "mvDType": "bool", "enum": ["1", "0"] },
+            }
+        } ],
+        [ "a bool 'mvDType' field without enum with 0 and 1 strings is invalid", False, { **BASE_SCHEMA,
+            "properties": {
+                "value": { "type": "string", "mvDType": "bool" },
+            }
+        } ],
+        [ "'mvDType' field requires 'type' to be a string", False, { **BASE_SCHEMA,
+            "properties": {
+                "value1": { "type": "integer", "mvDType": "int" },
+                "value2": { "type": "number", "mvDType": "long" },
+                "value3": { "type": "boolean", "mvDType": "float" },
+                "value4": { "type": "null", "mvDType": "decimal" },
+                "value5": { "type": "object", "mvDType": "bool", "enum": ["0", "1"] },
             }
         } ],
     ]
@@ -143,7 +169,6 @@ class MetaSchemaTestCase(BaseTestCase):
     @given(properties_schema=schema(
         value=schema(
             type=st.sampled_from(VALID_TYPES),
-            mvDType=st.sampled_from(VALID_MVDTYPES),
     )))
     def test_validates_proper_types(self, properties_schema):
         schema = {**self.BASE_SCHEMA, "properties":properties_schema}
@@ -157,6 +182,11 @@ class MetaSchemaTestCase(BaseTestCase):
             schema(type=invalid_type_st),
             schema(type=st.just("string"), mvDType=invalid_mvdtype_st),
             schema(type=invalid_type_st, mvDType=invalid_mvdtype_st),
+            schema(type=st.sampled_from(INVALID_TYPES)),
+            schema(
+                type=st.sampled_from(VALID_TYPES).filter(lambda s: s != "string"),
+                mvDType=st.sampled_from(VALID_MVDTYPES),
+            ),
         ])
     ))
     def test_invalidates_improper_types(self, properties_schema):
@@ -165,10 +195,14 @@ class MetaSchemaTestCase(BaseTestCase):
             self.validator.check_schema(schema)
 
     def test_devices_schemas_against_meta_schema(self):
+        stack = contextlib.ExitStack()
         for schema_path in pathlib.Path().glob('[!.]*/**/*.json'):
-            with self.subTest(path=str(schema_path)):
-                with open(schema_path) as f:
+            path = str(schema_path)
+            with self.subTest(path=path), stack:
+                with open(path) as f:
                     schema = json.load(f)
+                if path in KNOWN_INVALID_SCHEMAS and not self.no_invalid_schemas:
+                    stack.enter_context(self.assertRaises(SchemaError))
                 self.validator.check_schema(schema)
 
 
@@ -292,6 +326,11 @@ if __name__ == '__main__':
         help='show this help message and exit',
     )
     parser.add_argument(
+        '--no-invalid-schemas',
+        action='store_true',
+        help='run tests on invalid schemas and expect them to pass validation'
+    )
+    parser.add_argument(
         '--remote',
         default=None,
         type=remote_arg_type,
@@ -307,9 +346,12 @@ if __name__ == '__main__':
         parser.print_help()
         print('\nIn addition to the previous options, the following unittest options can be passed:')
         unknown_args.append('-h') # show unittest help
-    elif options.remote is None:
-        unittest.skip("see --help to run tests on remote schemas")(RemoteSchemasTestCase)
     else:
-        RemoteSchemasTestCase.init(*options.remote)
+        if options.remote is None:
+            unittest.skip("see --help to run tests on remote schemas")(RemoteSchemasTestCase)
+        else:
+            RemoteSchemasTestCase.init(*options.remote)
+
+        MetaSchemaTestCase.no_invalid_schemas = options.no_invalid_schemas
 
     unittest.main(argv=sys.argv[:1] + unknown_args)
